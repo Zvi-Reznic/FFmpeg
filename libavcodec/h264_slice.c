@@ -2582,6 +2582,21 @@ static void er_add_slice(H264SliceContext *sl,
     }
 }
 
+void (*post_mb_parsing_function_ptr)(const H264Context *h, H264SliceContext *sl) = ff_h264_hl_decode_mb;
+
+void avcodec_register_post_mb_parsing_function(void (*new_func)(const H264Context *h, 
+                                    H264SliceContext *sl)) {
+    printf("Registering post MB parsing function: %p\n", new_func);                                    
+    if (new_func){
+        post_mb_parsing_function_ptr = new_func;
+        printf("Post MB parsing function registered successfully.\n");
+    } else {
+        post_mb_parsing_function_ptr = ff_h264_hl_decode_mb;
+        printf("Post MB parsing function reset to default.\n");
+    }
+}
+
+
 static int decode_slice(struct AVCodecContext *avctx, void *arg)
 {
     H264SliceContext *sl = arg;
@@ -2643,7 +2658,7 @@ static int decode_slice(struct AVCodecContext *avctx, void *arg)
             ret = ff_h264_decode_mb_cabac(h, sl);
 
             if (ret >= 0)
-                ff_h264_hl_decode_mb(h, sl);
+                post_mb_parsing_function_ptr(h, sl);
 
             // FIXME optimal? or let mb_decode decode 16x32 ?
             if (ret >= 0 && FRAME_MBAFF(h)) {
@@ -2652,7 +2667,7 @@ static int decode_slice(struct AVCodecContext *avctx, void *arg)
                 ret = ff_h264_decode_mb_cabac(h, sl);
 
                 if (ret >= 0)
-                    ff_h264_hl_decode_mb(h, sl);
+                    post_mb_parsing_function_ptr(h, sl);
                 sl->mb_y--;
             }
             eos = get_cabac_terminate(&sl->cabac);
@@ -2714,7 +2729,7 @@ static int decode_slice(struct AVCodecContext *avctx, void *arg)
             ret = ff_h264_decode_mb_cavlc(h, sl);
 
             if (ret >= 0)
-                ff_h264_hl_decode_mb(h, sl);
+                post_mb_parsing_function_ptr(h, sl);
 
             // FIXME optimal? or let mb_decode decode 16x32 ?
             if (ret >= 0 && FRAME_MBAFF(h)) {
@@ -2722,7 +2737,7 @@ static int decode_slice(struct AVCodecContext *avctx, void *arg)
                 ret = ff_h264_decode_mb_cavlc(h, sl);
 
                 if (ret >= 0)
-                    ff_h264_hl_decode_mb(h, sl);
+                    post_mb_parsing_function_ptr(h, sl);
                 sl->mb_y--;
             }
 
