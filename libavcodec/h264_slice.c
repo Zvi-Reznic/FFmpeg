@@ -2597,8 +2597,7 @@ void avcodec_register_post_mb_parsing_function(void (*new_func)(const H264Contex
 }
 
 
-
-static int decode_slice_h264(struct AVCodecContext *avctx, void *arg)
+int avcodec_decode_slice_h264(struct AVCodecContext *avctx, void *arg)
 {
     H264SliceContext *sl = arg;
     const H264Context *h = sl->h264;
@@ -2805,7 +2804,7 @@ finish:
     return 0;
 }
 
-int (*decode_slice_function_ptr)(struct AVCodecContext *avctx, void *arg) = decode_slice_h264;
+int (*decode_slice_function_ptr)(struct AVCodecContext *avctx, void *arg) = avcodec_decode_slice_h264;
 
 static int decode_slice(struct AVCodecContext *avctx, void *arg){
     return decode_slice_function_ptr(avctx, arg);   
@@ -2815,10 +2814,10 @@ static int decode_slice(struct AVCodecContext *avctx, void *arg){
 void avcodec_register_decode_slice_function(int (*new_func)(struct AVCodecContext *avctx, void *arg)) {
     printf("Registering decode slice function: %p\n", new_func);                                    
     if (new_func){
-        decode_slice_function_ptr = decode_slice_h264;
+        decode_slice_function_ptr = new_func;
         printf("Decode slice function registered successfully.\n");
     } else {
-        decode_slice_function_ptr = decode_slice_h264;
+        decode_slice_function_ptr = avcodec_decode_slice_h264;
         printf("Decode slice function reset to default.\n");
     }
 }
