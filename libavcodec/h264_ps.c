@@ -331,18 +331,6 @@ void ff_h264_ps_uninit(H264ParamSets *ps)
     ps->sps = NULL;
 }
 
-static void try_load_postparse(void)
-{
-    void *handle = dlopen("libpostparse.so", RTLD_NOW);
-    if (!handle) {
-        av_log(NULL, AV_LOG_INFO,
-               "dlopen failed: %s\n", dlerror());
-    } else {
-        av_log(NULL, AV_LOG_INFO,
-               "libpostparse loaded successfully\n");
-    }
-}
-
 int ff_h264_decode_seq_parameter_set(GetBitContext *gb, AVCodecContext *avctx,
                                      H264ParamSets *ps, int ignore_truncation)
 {
@@ -364,8 +352,6 @@ int ff_h264_decode_seq_parameter_set(GetBitContext *gb, AVCodecContext *avctx,
         sps->data_size = sizeof(sps->data);
     }
     memcpy(sps->data, gb->buffer, sps->data_size);
-
-    try_load_postparse();
     
     profile_idc           = get_bits(gb, 8);
     constraint_set_flags |= get_bits1(gb) << 0;   // constraint_set0_flag

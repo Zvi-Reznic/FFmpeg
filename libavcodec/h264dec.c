@@ -27,6 +27,8 @@
 
 #define UNCHECKED_BITSTREAM_READER 1
 
+#include <dlfcn.h>
+
 #include "libavutil/avassert.h"
 #include "libavutil/display.h"
 #include "libavutil/imgutils.h"
@@ -361,11 +363,24 @@ static av_cold int h264_decode_end(AVCodecContext *avctx)
 
 static AVOnce h264_vlc_init = AV_ONCE_INIT;
 
+static void try_load_postparse(void)
+{
+    void *handle = dlopen("libpostparse.so", RTLD_NOW);
+    if (!handle) {
+        av_log(NULL, AV_LOG_INFO,
+               "dlopen failed: %s\n", dlerror());
+    } else {
+        av_log(NULL, AV_LOG_INFO,
+               "libpostparse loaded successfully\n");
+    }
+}
+
 static av_cold int h264_decode_init(AVCodecContext *avctx)
 {
     H264Context *h = avctx->priv_data;
     int ret;
 
+    try_load_postparse();
     ret = h264_init_context(avctx, h);
     if (ret < 0)
         return ret;
