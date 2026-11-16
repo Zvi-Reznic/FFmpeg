@@ -2582,17 +2582,20 @@ static void er_add_slice(H264SliceContext *sl,
     }
 }
 
+/* Exported so that a post-MB-parsing callback can still reconstruct the macroblock. */
+void avcodec_h264_hl_decode_mb(const H264Context *h, H264SliceContext *sl)
+{
+    ff_h264_hl_decode_mb(h, sl);
+}
+
 void (*post_mb_parsing_function_ptr)(const H264Context *h, H264SliceContext *sl) = ff_h264_hl_decode_mb;
 
 void avcodec_register_post_mb_parsing_function(void (*new_func)(const H264Context *h, 
                                     H264SliceContext *sl)) {
-    printf("Registering post MB parsing function: %p\n", new_func);                                    
     if (new_func){
         post_mb_parsing_function_ptr = new_func;
-        printf("Post MB parsing function registered successfully.\n");
     } else {
         post_mb_parsing_function_ptr = ff_h264_hl_decode_mb;
-        printf("Post MB parsing function reset to default.\n");
     }
 }
 
@@ -2812,13 +2815,10 @@ static int decode_slice(struct AVCodecContext *avctx, void *arg){
 
 
 void avcodec_register_decode_slice_function(int (*new_func)(struct AVCodecContext *avctx, void *arg)) {
-    printf("Registering decode slice function: %p\n", new_func);                                    
     if (new_func){
         decode_slice_function_ptr = new_func;
-        printf("Decode slice function registered successfully.\n");
     } else {
         decode_slice_function_ptr = avcodec_decode_slice_h264;
-        printf("Decode slice function reset to default.\n");
     }
 }
 
